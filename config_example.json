@@ -1,0 +1,8 @@
+{
+  "influx": {
+    "user": "<username>",
+    "pass": "<password>",
+    "db":  "<dbname>",
+    "host":  "127.0.0.1",
+    "port": 8086}
+}

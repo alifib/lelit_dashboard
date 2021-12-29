@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import json
 import os
 import time
 from abc import abstractmethod
@@ -9,11 +9,8 @@ import psutil
 from influxdb import InfluxDBClient
 from serial import Serial
 
-INFLUX_USER = "grafana"
-INFLUX_PASS = "grafush"
-INFLUX_DB = "home"
-INFLUX_HOST = "127.0.0.1"
-INFLUX_PORT = 8086
+with open('config.json', 'r') as conf:
+    influx_conf = json.load(conf)['influx']
 
 
 class InfluxReporter:
@@ -30,7 +27,11 @@ class InfluxReporter:
     def client(self):
         # connect to influx
         if self._client is None:
-            self._client = InfluxDBClient(INFLUX_HOST, INFLUX_PORT, INFLUX_USER, INFLUX_PASS, INFLUX_DB)
+            self._client = InfluxDBClient(influx_conf['host'],
+                                          influx_conf['port'],
+                                          influx_conf['user'],
+                                          influx_conf['pass'],
+                                          influx_conf['db'])
         return self._client
 
     @abstractmethod

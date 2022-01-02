@@ -9,6 +9,8 @@ import psutil
 from influxdb import InfluxDBClient
 from serial import Serial
 
+from usb_resetter import reset_usb
+
 with open('config.json', 'r') as conf:
     influx_conf = json.load(conf)['influx']
 
@@ -76,11 +78,17 @@ class LelitReporter(InfluxReporter):
 
     TTY_NAME = 'ttyUSB'
     BAUDRATE = 9600
+    HOUR = 60 * 60
+    RESET_INTERVAL = 1 * HOUR
+    DRIVER_NAME = 'CH340'  # change this to the driver your OS using. to know your driver, run "lsusb" on your
+    # environment and not the line of the driver for your usb-to-serial device.
 
     def __init__(self):
         super().__init__()
         self.serial = Serial(self.find_tty(), self.BAUDRATE)
         self.measurement_name = 'lelit'
+        self.last_reset = None
+        self.reset_usb()
 
     def find_tty(self):
         for file in os.listdir("/dev/"):
@@ -107,6 +115,7 @@ class LelitReporter(InfluxReporter):
             raise ValueError()
 
     def collect_and_report(self):
+        self.reset_if_needed()
         try:
             line = self.serial.readline().decode()
             items = line.split(',')
@@ -122,6 +131,18 @@ class LelitReporter(InfluxReporter):
     def line_reader(self):
         while self.serial.readable():
             yield self.serial.readline()
+
+    def reset_if_needed(self):
+        if time.time() - self.last_reset > self.RESET_INTERVAL:
+            self.reset_usb()
+
+    def reset_usb(self):
+        try:
+            reset_usb(self.DRIVER_NAME)
+        except Exception:
+            pass
+        else:
+            self.last_reset = time.time()
 
 
 if __name__ == '__main__':

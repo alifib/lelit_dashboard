@@ -88,7 +88,7 @@ class LelitReporter(InfluxReporter):
         self.serial = Serial(self.find_tty(), self.BAUDRATE)
         self.measurement_name = 'lelit'
         self.last_reset = None
-        self.reset_usb()
+        self.reset_if_needed()
 
     def find_tty(self):
         for file in os.listdir("/dev/"):
@@ -133,10 +133,10 @@ class LelitReporter(InfluxReporter):
             yield self.serial.readline()
 
     def reset_if_needed(self):
-        if time.time() - self.last_reset > self.RESET_INTERVAL:
-            self.reset_usb()
+        if self.last_reset is None or time.time() - self.last_reset > self.RESET_INTERVAL:
+            self._reset_usb()
 
-    def reset_usb(self):
+    def _reset_usb(self):
         try:
             reset_usb(self.DRIVER_NAME)
         except Exception:
